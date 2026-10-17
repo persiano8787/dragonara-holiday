@@ -159,7 +159,8 @@ td.flag{outline:2px solid var(--accent);outline-offset:-2px}
    - grey on the whole column (STOP LEAVE) = blocked date
    - red = cancelled leave (does not count)
    - any other fill = booking; where there is no fill, the letter decides
-   - free places = group limit - bookings; black is only a cross-check            */
+   - free places = group limit - bookings; black is only a cross-check
+   - hidden / squeezed rows are ignored (people who left)                           */
 (function (root) {
   "use strict";
   const MONTHS = ["january","february","march","april","may","june","july","august","september","october","november","december"];
@@ -243,8 +244,11 @@ td.flag{outline:2px solid var(--accent);outline-offset:-2px}
     });
     async function readSheet(path) {
       const doc = await xml(path); const grid = new Map();
+      const hidden = new Set();
       for (const row of kids(doc, "row")) {
         const r = +row.getAttribute("r"); const line = new Map();
+        // rows hidden or squeezed to almost zero height (e.g. people who left, kept by copy-paste) are ignored
+        if (row.getAttribute("hidden") === "1" || row.getAttribute("hidden") === "true" || (row.hasAttribute("ht") && +row.getAttribute("ht") < 3)) hidden.add(r);
         for (const c of kids(row, "c")) {
           const col = colIndex(c.getAttribute("r")); const s = +(c.getAttribute("s") || 0);
           const t = c.getAttribute("t"); const v = kid(c, "v");
@@ -257,6 +261,7 @@ td.flag{outline:2px solid var(--accent);outline-offset:-2px}
         }
         grid.set(r, line);
       }
+      grid.hidden = hidden;
       return grid;
     }
     return { zip, sheets, readSheet };
@@ -293,6 +298,7 @@ td.flag{outline:2px solid var(--accent);outline-offset:-2px}
         const m = /MAX\.?\s*(\d+)/.exec(line) || /ONLY\s+(\d+)\s+SHOULD/.exec(line);
         if (m && group && !(group in found)) found[group] = +m[1];
         if (!name || key in cfg.groups || SKIP_NAME.test(name) || line.startsWith("ONLY") || line.startsWith("MAX")) continue;
+        if (grid.hidden.has(r)) continue;
         let g = group;
         if (cfg.supervisors && group === "Poker dealer" && cfg.supervisors.some(s => name.toUpperCase().includes(s))) g = "Poker supervisor";
         if (g) rows.push({ r, name, group: g });
