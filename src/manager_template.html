@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leave Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Palette: Dragonara red (#ac2624, from the logo) on warm white / near-black.
+   Layout: desktop work surface — header, load bar, department tabs, month grid (names × days), issues panel. */
+:root{
+  --bg:#f4f3f0; --surface:#ffffff; --ink:#17151b; --muted:#6c6772; --line:#e3e0da; --line2:#d3cfc8;
+  --accent:#ac2624; --accent-ink:#ffffff;
+  --ok:#1d7656; --ok-bg:#e0f1e8; --warn:#8a6410; --warn-bg:#f7ecce; --full:#9b1b34; --full-bg:#f7e0e5;
+  --block:#5b5661; --block-bg:#e9e7eb;
+  --c-book:#5fb36b; --c-book2:#2e8b57; --c-yel:#f2d33b; --c-blue:#2f9fd0; --c-orange:#f0a531; --c-red:#e03a3a; --c-black:#2a272d;
+  --display:"Sora",system-ui,sans-serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e0d10; --surface:#18161b; --ink:#f2eee6; --muted:#a49ea8; --line:#2c2930; --line2:#3a363f;
+  --accent:#e2564c; --accent-ink:#ffffff;
+  --ok:#5fcf9f; --ok-bg:#12291f; --warn:#e8c268; --warn-bg:#2e2513; --full:#f0889b; --full-bg:#34141c;
+  --block:#b6b0b9; --block-bg:#262329; --c-black:#050406; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e0d10; --surface:#18161b; --ink:#f2eee6; --muted:#a49ea8; --line:#2c2930; --line2:#3a363f;
+  --accent:#e2564c; --accent-ink:#ffffff;
+  --ok:#5fcf9f; --ok-bg:#12291f; --warn:#e8c268; --warn-bg:#2e2513; --full:#f0889b; --full-bg:#34141c;
+  --block:#b6b0b9; --block-bg:#262329; --c-black:#050406; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--body);padding:20px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+.wrap{max-width:1400px;margin:0 auto;display:grid;gap:16px}
+h1,h2,h3{font-family:var(--display);margin:0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--accent)}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:40px;height:40px;border-radius:10px;display:block}
+.brandname{font:600 .95rem var(--display);color:var(--accent);letter-spacing:.02em}
+h1{font-size:1.4rem}
+.badge{font:600 .72rem var(--body);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line2);color:var(--muted);border-radius:999px;padding:3px 10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+button,.btn{font:600 14px var(--body);border-radius:10px;padding:9px 14px;cursor:pointer;border:1.5px solid var(--accent);background:var(--accent);color:var(--accent-ink)}
+button.sec{background:var(--surface);color:var(--accent)}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,.tab:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.drop{border:2px dashed var(--line2);border-radius:14px;padding:22px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--accent);background:var(--full-bg)}
+.drop p{margin:0}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.files{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;padding:0;list-style:none;font-size:.82rem}
+.files li{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px 9px}
+.files li.skip{opacity:.6}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{background:var(--surface);color:var(--ink);border:1px solid var(--line2);border-radius:999px;padding:7px 14px;font:500 .9rem var(--body);display:flex;gap:8px;align-items:center}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.count{font:500 .72rem var(--mono);background:var(--full-bg);color:var(--full);border-radius:999px;padding:1px 7px}
+.tab[aria-selected="true"] .count{background:rgb(255 255 255 / .2);color:inherit}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav{display:flex;align-items:center;gap:10px}
+.nav h2{font-size:1.1rem;min-width:170px;text-align:center}
+.nav button{width:38px;height:38px;padding:0;font-size:1.1rem}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.78rem;color:var(--muted);margin:0;padding:0;list-style:none}
+.legend li{display:flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:3px;display:inline-block;border:1px solid var(--line2)}
+.gridwrap{overflow:auto;border:1px solid var(--line);border-radius:12px;max-height:70vh;background:var(--surface)}
+table{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
+th,td{padding:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:center;font-size:.75rem}
+thead th{position:sticky;top:0;background:var(--surface);z-index:2;font-weight:600;padding:4px 0;min-width:30px}
+thead th .dw{display:block;font-weight:500;color:var(--muted);font-size:.66rem}
+thead th.we{background:var(--bg)}
+thead th.today{color:var(--accent)}
+th.name,td.name{position:sticky;left:0;background:var(--surface);z-index:1;text-align:left;padding:4px 10px;min-width:210px;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.82rem}
+thead th.name{z-index:3}
+tr.grp td{background:var(--bg);font:600 .75rem var(--body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:6px 10px}
+tr.grp td.name{background:var(--bg)}
+td.c{height:28px;min-width:30px;font:500 .7rem var(--mono);color:#111}
+td.c.k{background:var(--c-black)}
+td.c.D{background:var(--c-book2);color:#fff} td.c.v{background:var(--c-book)} td.c.Y{background:var(--c-yel)}
+td.c.B{background:var(--c-blue);color:#fff} td.c.O{background:var(--c-orange)} td.c.other{background:#9bc7a3}
+td.c.R{background:repeating-linear-gradient(135deg,var(--c-red) 0 4px,#f6b3b3 4px 8px);color:#fff}
+td.c.G{background:repeating-linear-gradient(135deg,var(--block-bg) 0 4px,transparent 4px 8px)}
+td.c.plain{color:var(--ink)}
+td.c.today{box-shadow:inset 2px 0 0 var(--accent),inset -2px 0 0 var(--accent)}
+tr.free td.name{font-weight:600;color:var(--ink)}
+tr.free td.c{font:600 .78rem var(--mono)}
+td.f-ok{background:var(--ok-bg);color:var(--ok)!important} td.f-warn{background:var(--warn-bg);color:var(--warn)!important}
+td.f-full{background:var(--full-bg);color:var(--full)!important} td.f-block{background:var(--block-bg);color:var(--block)!important}
+td.flag{outline:2px solid var(--accent);outline-offset:-2px}
+.issues{display:grid;gap:8px}
+.issues h3{font-size:1rem}
+.ilist{margin:0;padding:0;list-style:none;display:grid;gap:4px;max-height:260px;overflow:auto}
+.ilist li{display:grid;grid-template-columns:120px 150px 1fr;gap:10px;padding:6px 8px;border-radius:8px;background:var(--bg);font-size:.82rem}
+.kind{font:600 .7rem var(--body);text-transform:uppercase;letter-spacing:.05em;border-radius:6px;padding:2px 6px;align-self:start;text-align:center}
+.k-black{background:var(--block-bg);color:var(--block)} .k-over{background:var(--full-bg);color:var(--full)} .k-text,.k-structure{background:var(--warn-bg);color:var(--warn)}
+.empty{padding:28px;text-align:center}
+.err{color:var(--full)}
+@media (max-width:700px){.ilist li{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div style="display:grid;gap:6px">
+      <div class="brand"><img class="logo" src="__LOGO__" alt="" width="40" height="40"><span class="brandname">Dragonara Casino</span></div>
+      <h1>Leave manager</h1>
+    </div>
+    <span class="badge">Step 1 · read-only preview</span>
+  </header>
+
+  <section class="card" style="display:grid;gap:10px">
+    <div class="drop" id="drop">
+      <div>
+        <p><b>Drop the holiday folder or the Excel files here</b></p>
+        <p class="muted">Files stay on this computer. Nothing is saved or published in this preview.</p>
+      </div>
+      <div class="actions">
+        <button id="pickDir">Choose folder</button>
+        <button class="sec" id="pickFiles">Choose files</button>
+      </div>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx" multiple hidden>
+    <input type="file" id="dirInput" webkitdirectory multiple hidden>
+    <p id="status" class="muted" style="margin:0"></p>
+    <ul class="files" id="files"></ul>
+  </section>
+
+  <section id="work" hidden style="display:grid;gap:16px">
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <section class="card" style="display:grid;gap:12px">
+      <div class="bar">
+        <div class="nav">
+          <button class="sec" id="prev" aria-label="Previous month">‹</button>
+          <h2 id="month"></h2>
+          <button class="sec" id="next" aria-label="Next month">›</button>
+        </div>
+        <ul class="legend">
+          <li><span class="sw" style="background:var(--c-book)"></span>Booked</li>
+          <li><span class="sw" style="background:repeating-linear-gradient(135deg,var(--c-red) 0 3px,#f6b3b3 3px 6px)"></span>Cancelled</li>
+          <li><span class="sw" style="background:repeating-linear-gradient(135deg,var(--block-bg) 0 3px,transparent 3px 6px)"></span>Stop leave</li>
+          <li><span class="sw" style="background:var(--c-black)"></span>Marked full</li>
+          <li><span class="sw" style="border:2px solid var(--accent)"></span>Issue</li>
+        </ul>
+      </div>
+      <div class="gridwrap"><table id="grid"></table></div>
+    </section>
+    <section class="card issues">
+      <h3 id="issuesTitle">Issues</h3>
+      <ul class="ilist" id="issues"></ul>
+    </section>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+/*__CORE__*/
+</script>
+<script>
+const C = window.LeaveCore;
+const $ = id => document.getElementById(id);
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DOW = ["S","M","T","W","T","F","S"];
+const parseXML = s => new DOMParser().parseFromString(s, "application/xml");
+const TODAY = new Date(); const todayKey = TODAY.getFullYear()*10000 + (TODAY.getMonth()+1)*100 + TODAY.getDate();
+const START = [TODAY.getFullYear(), TODAY.getMonth()+1];
+let loaded = {};          // dept id -> {cfg, fileName, months, issues, roster}
+let cur = null, keys = [], idx = 0;
+
+async function loadFiles(list){
+  const xlsx = list.filter(f => /\.xlsx$/i.test(f.name) && !f.name.startsWith("~$"));
+  $("files").innerHTML = ""; $("status").textContent = xlsx.length ? "Reading " + xlsx.length + " file(s)…" : "No .xlsx files found.";
+  for (const f of xlsx){
+    const li = document.createElement("li"); li.textContent = f.name; $("files").appendChild(li);
+    const cfg = C.deptForFile(f.name);
+    if (!cfg){ li.className = "skip"; li.textContent += " · not used"; continue; }
+    try {
+      const book = await C.openWorkbook(JSZip, await f.arrayBuffer(), parseXML);
+      const res = await C.parseDept(cfg, book, START);
+      loaded[cfg.id] = { cfg, fileName: f.name, ...res };
+      li.textContent += " · " + cfg.dept;
+    } catch (e) { li.className = "skip"; li.innerHTML = f.name + ' · <span class="err">could not be read</span>'; console.error(e); }
+  }
+  const n = Object.keys(loaded).length;
+  $("status").textContent = n ? n + " department(s) loaded." : "None of the files is a holiday calendar.";
+  if (n){ $("work").hidden = false; if (!cur || !loaded[cur]) cur = C.DEPTS.find(d => loaded[d.id]).id; openDept(cur); }
+}
+
+function renderTabs(){
+  $("tabs").innerHTML = "";
+  for (const d of C.DEPTS){
+    const L = loaded[d.id]; if (!L) continue;
+    const b = document.createElement("button"); b.className = "tab"; b.setAttribute("role","tab"); b.setAttribute("aria-selected", d.id === cur);
+    const n = L.issues.filter(i => i.kind !== "over").length;
+    b.innerHTML = d.dept + (n ? ' <span class="count">' + n + "</span>" : "");
+    b.onclick = () => openDept(d.id); $("tabs").appendChild(b);
+  }
+}
+function openDept(id){
+  cur = id; const L = loaded[id]; keys = Object.keys(L.months).sort();
+  const nowK = START[0] + "-" + String(START[1]).padStart(2,"0"); idx = Math.max(0, keys.indexOf(nowK));
+  renderTabs(); render();
+}
+
+function freeCell(G, d, blocked){
+  if (blocked) return ["f-block", "×"];
+  const left = Math.max(0, G.limit - G.booked[d-1]);
+  return [left === 0 ? "f-full" : (left === 1 && G.limit > 1 ? "f-warn" : "f-ok"), left];
+}
+
+function render(){
+  const L = loaded[cur]; const mk = keys[idx]; const M = L.months[mk]; const R = L.roster[mk];
+  const [y, mo] = mk.split("-").map(Number); const nd = R.days;
+  $("month").textContent = MONTHS[mo-1] + " " + y;
+  $("prev").disabled = idx === 0; $("next").disabled = idx === keys.length - 1;
+  const flagged = new Set(L.issues.filter(i => i.month === R.sheet.trim() && i.day).map(i => i.group + "|" + i.day));
+  let h = '<thead><tr><th class="name">Employee</th>';
+  for (let d = 1; d <= nd; d++){
+    const wd = new Date(y, mo-1, d).getDay(); const k = y*10000 + mo*100 + d;
+    h += '<th class="' + (wd === 0 || wd === 6 ? "we" : "") + (k === todayKey ? " today" : "") + '">' + d + '<span class="dw">' + DOW[wd] + "</span></th>";
+  }
+  h += "</tr></thead><tbody>";
+  const groups = L.cfg.order.filter(g => M.groups[g]);
+  for (const g of groups){
+    const label = (L.cfg.labels && L.cfg.labels[g]) || g; const G = M.groups[g];
+    h += '<tr class="grp"><td class="name">' + label + ' · max ' + G.limit + '</td><td colspan="' + nd + '"></td></tr>';
+    for (const p of R.people.filter(p => p.group === g)){
+      h += '<tr><td class="name" title="' + esc(p.name) + '">' + esc(p.name) + "</td>";
+      p.days.forEach((c, i) => {
+        const d = i + 1, k = y*10000 + mo*100 + d;
+        let cls = c.code === "K" ? "k" : c.code === "R" ? "R" : (c.code === "G" || c.code === "g") ? "G" : (c.code === "." || c.code === "w" || c.code === "s") ? "plain" : ("DvYBO".includes(c.code) ? c.code : "other");
+        h += '<td class="c ' + cls + (k === todayKey ? " today" : "") + '">' + esc(c.text.slice(0,3)) + "</td>";
+      });
+      h += "</tr>";
+    }
+    h += '<tr class="free"><td class="name">Free places</td>';
+    for (let d = 1; d <= nd; d++){
+      const [cls, v] = freeCell(G, d, M.blocked.includes(d));
+      h += '<td class="c ' + cls + (flagged.has(g + "|" + d) ? " flag" : "") + '">' + v + "</td>";
+    }
+    h += "</tr>";
+  }
+  $("grid").innerHTML = h + "</tbody>";
+  const list = L.issues.filter(i => i.month === R.sheet.trim());
+  $("issuesTitle").textContent = "Issues in " + MONTHS[mo-1] + " " + y + " (" + list.length + ")";
+  $("issues").innerHTML = list.length ? list.map(i => '<li><span class="kind k-' + i.kind + '">' +
+    ({black:"Marked full", over:"Over limit", text:"Unrecognised", structure:"Sheet"})[i.kind] + "</span><span>" +
+    (i.day ? MONTHS[mo-1].slice(0,3) + " " + i.day : "") + (i.group && groups.length > 1 ? " · " + ((L.cfg.labels && L.cfg.labels[i.group]) || i.group) : "") +
+    "</span><span>" + esc(i.text) + "</span></li>").join("") : '<li style="grid-template-columns:1fr" class="muted">No issues this month.</li>';
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// ---- loading: drag & drop (files or folders), pickers ----
+async function entryFiles(entry){
+  if (entry.isFile) return new Promise(res => entry.file(f => res([f]), () => res([])));
+  if (entry.isDirectory){
+    const reader = entry.createReader(); let all = [], batch;
+    do { batch = await new Promise(res => reader.readEntries(res, () => res([]))); all = all.concat(batch); } while (batch.length);
+    return (await Promise.all(all.filter(e => e.isFile).map(entryFiles))).flat();
+  }
+  return [];
+}
+const drop = $("drop");
+["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, () => drop.classList.remove("over")));
+drop.addEventListener("drop", async e => {
+  e.preventDefault();
+  const entries = Array.from(e.dataTransfer.items || []).map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+  const files = entries.length ? (await Promise.all(entries.map(entryFiles))).flat() : Array.from(e.dataTransfer.files);
+  loadFiles(files);
+});
+$("pickFiles").onclick = () => $("fileInput").click();
+$("fileInput").onchange = e => loadFiles(Array.from(e.target.files));
+$("pickDir").onclick = async () => {
+  if (window.showDirectoryPicker){
+    try {
+      const dir = await window.showDirectoryPicker({ id: "holidays", mode: "read" });
+      const files = []; for await (const h of dir.values()) if (h.kind === "file") files.push(await h.getFile());
+      loadFiles(files);
+    } catch (e) { if (e.name !== "AbortError") $("status").textContent = "The folder could not be opened."; }
+  } else $("dirInput").click();
+};
+$("dirInput").onchange = e => loadFiles(Array.from(e.target.files).filter(f => !f.webkitRelativePath || f.webkitRelativePath.split("/").length === 2));
+$("prev").onclick = () => { if (idx > 0){ idx--; render(); } };
+$("next").onclick = () => { if (idx < keys.length - 1){ idx++; render(); } };
+</script>
+</body>
+</html>
