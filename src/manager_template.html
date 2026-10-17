@@ -105,6 +105,7 @@ button.book{background:#2e8b57;border-color:#2e8b57;color:#fff}
 button.cancel{background:#c42f2f;border-color:#c42f2f;color:#fff}
 button.clear{background:var(--surface);border-color:var(--line2);color:var(--ink)}
 button.save{background:var(--accent);border-color:var(--accent)}
+#pubSettings.on{border-color:var(--ok);color:var(--ok)}
 .pending{font-size:.82rem;color:var(--warn);font-weight:600}
 td.c.edit{cursor:cell}
 td.c.past{opacity:.55}
@@ -127,7 +128,7 @@ td.c{position:relative;user-select:none}
       <div class="brand"><img class="logo" src="__LOGO__" alt="" width="40" height="40"><span class="brandname">Dragonara Casino</span></div>
       <h1>Leave manager</h1>
     </div>
-    <div class="who"><label for="author">Your name</label><input id="author" placeholder="Name shown on comments" autocomplete="name"><span class="badge">Step 2 · editing, no publishing</span></div>
+    <div class="who"><label for="author">Your name</label><input id="author" placeholder="Name shown on comments" autocomplete="name"><button class="sec" id="pubSettings" style="padding:7px 12px;font-size:.85rem">Publishing: off</button></div>
   </header>
 
   <section class="card" style="display:grid;gap:10px">
@@ -159,6 +160,7 @@ td.c{position:relative;user-select:none}
       </div>
       <div class="grp">
         <span class="pending" id="pending"></span>
+        <button class="sec" id="publishAll" disabled title="Publish the availability of the loaded departments as they are in the Excel files">Publish</button>
         <button class="save" id="save" disabled>Save to Excel</button>
       </div>
     </div>
@@ -180,7 +182,7 @@ td.c{position:relative;user-select:none}
       </div>
       <div class="gridwrap"><table id="grid"></table></div>
     </section>
-    <section class="card" id="saveLog" hidden><h3 style="font-size:1rem;margin:0 0 6px">Last save</h3><ul class="log" id="logList"></ul></section>
+    <section class="card" id="saveLog" hidden><h3 style="font-size:1rem;margin:0 0 6px">Last save / publish</h3><ul class="log" id="logList"></ul></section>
     <section class="card issues">
       <h3 id="issuesTitle">Issues</h3>
       <ul class="ilist" id="issues"></ul>
@@ -238,6 +240,7 @@ async function loadEntries(list){ // list of {file, handle?, dir?}
   const n = Object.keys(loaded).length;
   const canSave = Object.values(loaded).some(L => L.handle && L.dir);
   $("status").textContent = n ? n + " department(s) loaded." + (canSave ? "" : " Read-only: open the folder to be able to save.") : "None of the files is a holiday calendar.";
+  refreshPubUI();
   if (n){ $("work").hidden = false; if (!cur || !loaded[cur]) cur = C.DEPTS.find(d => loaded[d.id]).id; openDept(cur, true); }
 }
 async function reparse(L){
@@ -411,7 +414,7 @@ const stamp = d => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"
 async function exists(dir, name){ try { await dir.getFileHandle(name); return true; } catch(e){ return false; } }
 async function saveOne(L){
   if (!L.handle || !L.dir) return "Read-only: open the folder (not single files) to save.";
-  if ((await L.dir.queryPermission({ mode: "readwrite" })) !== "granted" && (await L.dir.requestPermission({ mode: "readwrite" })) !== "granted") return "Permission to write in the folder was not given.";
+  if (L.dir.queryPermission && (await L.dir.queryPermission({ mode: "readwrite" })) !== "granted" && (await L.dir.requestPermission({ mode: "readwrite" })) !== "granted") return "Permission to write in the folder was not given.";
   if (await exists(L.dir, "~$" + L.fileName) || await exists(L.dir, "~$" + L.fileName.slice(2))) return "The file is open in Excel (on this or another computer). Close it and save again.";
   const disk = await L.handle.getFile();
   if (disk.lastModified !== L.lastModified) return "The file was changed by someone else after you loaded it. Reload the folder, redo your changes and save.";
@@ -427,16 +430,81 @@ async function saveOne(L){
   return null;
 }
 $("save").onclick = async () => {
-  $("save").disabled = true; $("save").textContent = "Saving…";
+  $("save").disabled = true; $("save").textContent = token() ? "Saving and publishing…" : "Saving…";
   const res = [];
   for (const L of Object.values(loaded).filter(x => x.dirty)){
     let err; try { err = await saveOne(L); } catch (e) { console.error(e); err = "Unexpected error: " + e.message; }
-    res.push('<li class="' + (err ? "bad" : "ok") + '"><b>' + esc(L.cfg.dept) + "</b>: " + (err ? esc(err) : "saved to " + esc(L.fileName) + " (backup in _backup)") + "</li>");
+    let pub = "";
+    if (!err && token()){ let perr; try { perr = await publishDept(L); } catch (e) { perr = "Publishing failed: " + e.message; } pub = perr ? ' · <span class="bad">not published: ' + esc(perr) + "</span>" : " · published, staff see it in 1–2 minutes"; }
+    else if (!err) pub = " · not published (Publishing is off)";
+    res.push('<li class="' + (err ? "bad" : "ok") + '"><b>' + esc(L.cfg.dept) + "</b>: " + (err ? esc(err) : "saved to " + esc(L.fileName) + " (backup in _backup)" + pub) + "</li>");
   }
   $("logList").innerHTML = res.join(""); $("saveLog").hidden = false;
-  $("save").textContent = "Save to Excel"; renderTabs(); render();
+  renderTabs(); render(); refreshPubUI();
 };
 window.addEventListener("beforeunload", e => { if (Object.values(loaded).some(L => L.dirty)){ e.preventDefault(); e.returnValue = ""; } });
+
+
+// ---------- publishing to the staff page (GitHub) ----------
+const REPO = "persiano8787/dragonara-holiday", API = "https://api.github.com/repos/" + REPO;
+const token = () => store.get("lm-gh-token") || "";
+function refreshPubUI(){
+  const on = !!token();
+  $("pubSettings").textContent = "Publishing: " + (on ? "on" : "off");
+  $("pubSettings").classList.toggle("on", on);
+  $("save").textContent = on ? "Save & publish" : "Save to Excel";
+  $("publishAll").disabled = !on || !Object.keys(loaded).length;
+}
+function b64utf8(s){ const bytes = new TextEncoder().encode(s); let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(bin); }
+async function gh(path, opts = {}){
+  const r = await fetch(API + path, { ...opts, headers: { "Authorization": "Bearer " + token(), "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", ...(opts.headers || {}) } });
+  const body = r.status === 204 ? null : await r.json().catch(() => null);
+  return { ok: r.ok, status: r.status, body };
+}
+async function publishDept(L){
+  if (!token()) return "Publishing is off: add the GitHub token in Publishing.";
+  if (L.dirty) return "Save the changes to Excel first.";
+  const data = C.publicData(L.cfg, L.months, new Date().toISOString());
+  const path = "/contents/data/" + L.cfg.id + ".json", content = b64utf8(JSON.stringify(data));
+  for (let attempt = 0; attempt < 2; attempt++){
+    const cur = await gh(path + "?ref=main");
+    if (!cur.ok && cur.status !== 404) return cur.status === 401 ? "The GitHub token is not valid or has expired. Update it in Publishing." : "GitHub could not be reached (" + cur.status + ").";
+    const put = await gh(path, { method: "PUT", body: JSON.stringify({ message: "Update " + L.cfg.dept + " availability", content, branch: "main", ...(cur.ok ? { sha: cur.body.sha } : {}) }) });
+    if (put.ok) return null;
+    if (put.status === 401) return "The GitHub token is not valid or has expired. Update it in Publishing.";
+    if (put.status === 403 || put.status === 404) return "The GitHub token cannot write to the site. Check that it has Contents: Read and write on dragonara-holiday.";
+    if (put.status !== 409 && put.status !== 422) return "Publishing failed (" + put.status + ").";
+  }
+  return "Publishing failed: someone else published at the same moment. Try again.";
+}
+$("publishAll").onclick = async () => {
+  const list = Object.values(loaded);
+  const ok = await ask("Publish availability", "<p>Publish the free places of " + list.map(L => "<b>" + esc(L.cfg.dept) + "</b>").join(", ") + " exactly as they are in the Excel files now? Staff see the update in 1–2 minutes. No names are published.</p>", "Publish", "Cancel");
+  if (!ok) return;
+  $("publishAll").disabled = true; const res = [];
+  for (const L of list){ let err; try { err = await publishDept(L); } catch (e) { err = "Publishing failed: " + e.message; }
+    res.push('<li class="' + (err ? "bad" : "ok") + '"><b>' + esc(L.cfg.dept) + "</b>: " + (err ? esc(err) : "published") + "</li>"); }
+  $("logList").innerHTML = res.join(""); $("saveLog").hidden = false; refreshPubUI();
+};
+$("pubSettings").onclick = () => {
+  $("modalBox").innerHTML = '<h3>Publishing</h3><p style="margin:0">With a GitHub token, <b>Save &amp; publish</b> also updates the staff page (free places only, no names). The token is kept only in this browser, for this Windows account.</p>' +
+    '<label for="mTok" style="font-weight:600">GitHub token</label><input id="mTok" type="password" placeholder="github_pat_…" style="font:500 14px var(--mono);padding:10px 12px;border:1px solid var(--line2);border-radius:8px;background:var(--bg);color:var(--ink)">' +
+    '<p id="mTokMsg" class="muted" style="margin:0;font-size:.85rem">' + (token() ? "A token is saved. Paste a new one to replace it." : "No token saved: changes are saved to Excel only.") + "</p>" +
+    '<div class="actions" style="justify-content:space-between"><button class="sec" id="mOff"' + (token() ? "" : " disabled") + '>Remove token</button><span class="actions"><button class="sec" id="mNo">Close</button><button id="mYes">Check and save</button></span></div>';
+  $("modal").hidden = false; $("mTok").focus();
+  const close = () => { $("modal").hidden = true; refreshPubUI(); };
+  $("mNo").onclick = close;
+  $("mOff").onclick = () => { store.set("lm-gh-token", ""); close(); };
+  $("mYes").onclick = async () => {
+    const v = $("mTok").value.trim(); if (!v){ $("mTok").focus(); return; }
+    $("mTokMsg").textContent = "Checking…"; $("mTokMsg").className = "muted";
+    const old = token(); store.set("lm-gh-token", v);
+    const r = await gh("").catch(() => ({ ok: false, status: 0 }));
+    if (r.ok && r.body && r.body.permissions && r.body.permissions.push){ $("mTokMsg").textContent = "Token works. Publishing is on."; $("mTokMsg").className = "ok"; setTimeout(close, 900); }
+    else { store.set("lm-gh-token", old); $("mTokMsg").className = "err";
+      $("mTokMsg").textContent = r.status === 401 ? "This token is not valid or has expired." : r.ok ? "This token cannot write to dragonara-holiday. It needs Contents: Read and write." : "GitHub could not be reached. Check the connection."; }
+  };
+};
 
 // ---------- modal ----------
 function ask(title, html, yes, no){
@@ -505,7 +573,7 @@ $("pickDir").onclick = async () => {
 $("dirInput").onchange = e => loadEntries(Array.from(e.target.files).filter(f => !f.webkitRelativePath || f.webkitRelativePath.split("/").length === 2).map(f => ({ file: f })));
 $("prev").onclick = () => { if (idx > 0){ idx--; picked.clear(); render(); } };
 $("next").onclick = () => { if (idx < keys.length - 1){ idx++; picked.clear(); render(); } };
-updateToolbar();
+updateToolbar(); refreshPubUI();
 </script>
 </body>
 </html>

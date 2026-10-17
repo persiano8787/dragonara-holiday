@@ -105,6 +105,7 @@ button.book{background:#2e8b57;border-color:#2e8b57;color:#fff}
 button.cancel{background:#c42f2f;border-color:#c42f2f;color:#fff}
 button.clear{background:var(--surface);border-color:var(--line2);color:var(--ink)}
 button.save{background:var(--accent);border-color:var(--accent)}
+#pubSettings.on{border-color:var(--ok);color:var(--ok)}
 .pending{font-size:.82rem;color:var(--warn);font-weight:600}
 td.c.edit{cursor:cell}
 td.c.past{opacity:.55}
@@ -127,7 +128,7 @@ td.c{position:relative;user-select:none}
       <div class="brand"><img class="logo" src="data:image/webp;base64,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" alt="" width="40" height="40"><span class="brandname">Dragonara Casino</span></div>
       <h1>Leave manager</h1>
     </div>
-    <div class="who"><label for="author">Your name</label><input id="author" placeholder="Name shown on comments" autocomplete="name"><span class="badge">Step 2 · editing, no publishing</span></div>
+    <div class="who"><label for="author">Your name</label><input id="author" placeholder="Name shown on comments" autocomplete="name"><button class="sec" id="pubSettings" style="padding:7px 12px;font-size:.85rem">Publishing: off</button></div>
   </header>
 
   <section class="card" style="display:grid;gap:10px">
@@ -159,6 +160,7 @@ td.c{position:relative;user-select:none}
       </div>
       <div class="grp">
         <span class="pending" id="pending"></span>
+        <button class="sec" id="publishAll" disabled title="Publish the availability of the loaded departments as they are in the Excel files">Publish</button>
         <button class="save" id="save" disabled>Save to Excel</button>
       </div>
     </div>
@@ -180,7 +182,7 @@ td.c{position:relative;user-select:none}
       </div>
       <div class="gridwrap"><table id="grid"></table></div>
     </section>
-    <section class="card" id="saveLog" hidden><h3 style="font-size:1rem;margin:0 0 6px">Last save</h3><ul class="log" id="logList"></ul></section>
+    <section class="card" id="saveLog" hidden><h3 style="font-size:1rem;margin:0 0 6px">Last save / publish</h3><ul class="log" id="logList"></ul></section>
     <section class="card issues">
       <h3 id="issuesTitle">Issues</h3>
       <ul class="ilist" id="issues"></ul>
@@ -748,6 +750,7 @@ async function loadEntries(list){ // list of {file, handle?, dir?}
   const n = Object.keys(loaded).length;
   const canSave = Object.values(loaded).some(L => L.handle && L.dir);
   $("status").textContent = n ? n + " department(s) loaded." + (canSave ? "" : " Read-only: open the folder to be able to save.") : "None of the files is a holiday calendar.";
+  refreshPubUI();
   if (n){ $("work").hidden = false; if (!cur || !loaded[cur]) cur = C.DEPTS.find(d => loaded[d.id]).id; openDept(cur, true); }
 }
 async function reparse(L){
@@ -921,7 +924,7 @@ const stamp = d => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"
 async function exists(dir, name){ try { await dir.getFileHandle(name); return true; } catch(e){ return false; } }
 async function saveOne(L){
   if (!L.handle || !L.dir) return "Read-only: open the folder (not single files) to save.";
-  if ((await L.dir.queryPermission({ mode: "readwrite" })) !== "granted" && (await L.dir.requestPermission({ mode: "readwrite" })) !== "granted") return "Permission to write in the folder was not given.";
+  if (L.dir.queryPermission && (await L.dir.queryPermission({ mode: "readwrite" })) !== "granted" && (await L.dir.requestPermission({ mode: "readwrite" })) !== "granted") return "Permission to write in the folder was not given.";
   if (await exists(L.dir, "~$" + L.fileName) || await exists(L.dir, "~$" + L.fileName.slice(2))) return "The file is open in Excel (on this or another computer). Close it and save again.";
   const disk = await L.handle.getFile();
   if (disk.lastModified !== L.lastModified) return "The file was changed by someone else after you loaded it. Reload the folder, redo your changes and save.";
@@ -937,16 +940,81 @@ async function saveOne(L){
   return null;
 }
 $("save").onclick = async () => {
-  $("save").disabled = true; $("save").textContent = "Saving…";
+  $("save").disabled = true; $("save").textContent = token() ? "Saving and publishing…" : "Saving…";
   const res = [];
   for (const L of Object.values(loaded).filter(x => x.dirty)){
     let err; try { err = await saveOne(L); } catch (e) { console.error(e); err = "Unexpected error: " + e.message; }
-    res.push('<li class="' + (err ? "bad" : "ok") + '"><b>' + esc(L.cfg.dept) + "</b>: " + (err ? esc(err) : "saved to " + esc(L.fileName) + " (backup in _backup)") + "</li>");
+    let pub = "";
+    if (!err && token()){ let perr; try { perr = await publishDept(L); } catch (e) { perr = "Publishing failed: " + e.message; } pub = perr ? ' · <span class="bad">not published: ' + esc(perr) + "</span>" : " · published, staff see it in 1–2 minutes"; }
+    else if (!err) pub = " · not published (Publishing is off)";
+    res.push('<li class="' + (err ? "bad" : "ok") + '"><b>' + esc(L.cfg.dept) + "</b>: " + (err ? esc(err) : "saved to " + esc(L.fileName) + " (backup in _backup)" + pub) + "</li>");
   }
   $("logList").innerHTML = res.join(""); $("saveLog").hidden = false;
-  $("save").textContent = "Save to Excel"; renderTabs(); render();
+  renderTabs(); render(); refreshPubUI();
 };
 window.addEventListener("beforeunload", e => { if (Object.values(loaded).some(L => L.dirty)){ e.preventDefault(); e.returnValue = ""; } });
+
+
+// ---------- publishing to the staff page (GitHub) ----------
+const REPO = "persiano8787/dragonara-holiday", API = "https://api.github.com/repos/" + REPO;
+const token = () => store.get("lm-gh-token") || "";
+function refreshPubUI(){
+  const on = !!token();
+  $("pubSettings").textContent = "Publishing: " + (on ? "on" : "off");
+  $("pubSettings").classList.toggle("on", on);
+  $("save").textContent = on ? "Save & publish" : "Save to Excel";
+  $("publishAll").disabled = !on || !Object.keys(loaded).length;
+}
+function b64utf8(s){ const bytes = new TextEncoder().encode(s); let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(bin); }
+async function gh(path, opts = {}){
+  const r = await fetch(API + path, { ...opts, headers: { "Authorization": "Bearer " + token(), "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", ...(opts.headers || {}) } });
+  const body = r.status === 204 ? null : await r.json().catch(() => null);
+  return { ok: r.ok, status: r.status, body };
+}
+async function publishDept(L){
+  if (!token()) return "Publishing is off: add the GitHub token in Publishing.";
+  if (L.dirty) return "Save the changes to Excel first.";
+  const data = C.publicData(L.cfg, L.months, new Date().toISOString());
+  const path = "/contents/data/" + L.cfg.id + ".json", content = b64utf8(JSON.stringify(data));
+  for (let attempt = 0; attempt < 2; attempt++){
+    const cur = await gh(path + "?ref=main");
+    if (!cur.ok && cur.status !== 404) return cur.status === 401 ? "The GitHub token is not valid or has expired. Update it in Publishing." : "GitHub could not be reached (" + cur.status + ").";
+    const put = await gh(path, { method: "PUT", body: JSON.stringify({ message: "Update " + L.cfg.dept + " availability", content, branch: "main", ...(cur.ok ? { sha: cur.body.sha } : {}) }) });
+    if (put.ok) return null;
+    if (put.status === 401) return "The GitHub token is not valid or has expired. Update it in Publishing.";
+    if (put.status === 403 || put.status === 404) return "The GitHub token cannot write to the site. Check that it has Contents: Read and write on dragonara-holiday.";
+    if (put.status !== 409 && put.status !== 422) return "Publishing failed (" + put.status + ").";
+  }
+  return "Publishing failed: someone else published at the same moment. Try again.";
+}
+$("publishAll").onclick = async () => {
+  const list = Object.values(loaded);
+  const ok = await ask("Publish availability", "<p>Publish the free places of " + list.map(L => "<b>" + esc(L.cfg.dept) + "</b>").join(", ") + " exactly as they are in the Excel files now? Staff see the update in 1–2 minutes. No names are published.</p>", "Publish", "Cancel");
+  if (!ok) return;
+  $("publishAll").disabled = true; const res = [];
+  for (const L of list){ let err; try { err = await publishDept(L); } catch (e) { err = "Publishing failed: " + e.message; }
+    res.push('<li class="' + (err ? "bad" : "ok") + '"><b>' + esc(L.cfg.dept) + "</b>: " + (err ? esc(err) : "published") + "</li>"); }
+  $("logList").innerHTML = res.join(""); $("saveLog").hidden = false; refreshPubUI();
+};
+$("pubSettings").onclick = () => {
+  $("modalBox").innerHTML = '<h3>Publishing</h3><p style="margin:0">With a GitHub token, <b>Save &amp; publish</b> also updates the staff page (free places only, no names). The token is kept only in this browser, for this Windows account.</p>' +
+    '<label for="mTok" style="font-weight:600">GitHub token</label><input id="mTok" type="password" placeholder="github_pat_…" style="font:500 14px var(--mono);padding:10px 12px;border:1px solid var(--line2);border-radius:8px;background:var(--bg);color:var(--ink)">' +
+    '<p id="mTokMsg" class="muted" style="margin:0;font-size:.85rem">' + (token() ? "A token is saved. Paste a new one to replace it." : "No token saved: changes are saved to Excel only.") + "</p>" +
+    '<div class="actions" style="justify-content:space-between"><button class="sec" id="mOff"' + (token() ? "" : " disabled") + '>Remove token</button><span class="actions"><button class="sec" id="mNo">Close</button><button id="mYes">Check and save</button></span></div>';
+  $("modal").hidden = false; $("mTok").focus();
+  const close = () => { $("modal").hidden = true; refreshPubUI(); };
+  $("mNo").onclick = close;
+  $("mOff").onclick = () => { store.set("lm-gh-token", ""); close(); };
+  $("mYes").onclick = async () => {
+    const v = $("mTok").value.trim(); if (!v){ $("mTok").focus(); return; }
+    $("mTokMsg").textContent = "Checking…"; $("mTokMsg").className = "muted";
+    const old = token(); store.set("lm-gh-token", v);
+    const r = await gh("").catch(() => ({ ok: false, status: 0 }));
+    if (r.ok && r.body && r.body.permissions && r.body.permissions.push){ $("mTokMsg").textContent = "Token works. Publishing is on."; $("mTokMsg").className = "ok"; setTimeout(close, 900); }
+    else { store.set("lm-gh-token", old); $("mTokMsg").className = "err";
+      $("mTokMsg").textContent = r.status === 401 ? "This token is not valid or has expired." : r.ok ? "This token cannot write to dragonara-holiday. It needs Contents: Read and write." : "GitHub could not be reached. Check the connection."; }
+  };
+};
 
 // ---------- modal ----------
 function ask(title, html, yes, no){
@@ -1015,7 +1083,7 @@ $("pickDir").onclick = async () => {
 $("dirInput").onchange = e => loadEntries(Array.from(e.target.files).filter(f => !f.webkitRelativePath || f.webkitRelativePath.split("/").length === 2).map(f => ({ file: f })));
 $("prev").onclick = () => { if (idx > 0){ idx--; picked.clear(); render(); } };
 $("next").onclick = () => { if (idx < keys.length - 1){ idx++; picked.clear(); render(); } };
-updateToolbar();
+updateToolbar(); refreshPubUI();
 </script>
 </body>
 </html>
