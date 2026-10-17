@@ -94,6 +94,26 @@ td.flag{outline:2px solid var(--accent);outline-offset:-2px}
 .kind{font:600 .7rem var(--body);text-transform:uppercase;letter-spacing:.05em;border-radius:6px;padding:2px 6px;align-self:start;text-align:center}
 .k-black{background:var(--block-bg);color:var(--block)} .k-over{background:var(--full-bg);color:var(--full)} .k-text,.k-structure{background:var(--warn-bg);color:var(--warn)}
 .empty{padding:28px;text-align:center}
+.who{display:flex;align-items:center;gap:8px;font-size:.85rem}
+.who input{font:500 14px var(--body);padding:8px 10px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);width:200px}
+.toolbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;box-shadow:0 4px 14px rgb(0 0 0 / .06)}
+.toolbar .grp{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.toolbar .sel{font-size:.85rem;color:var(--muted);min-width:120px}
+button.book{background:#2e8b57;border-color:#2e8b57;color:#fff}
+button.cancel{background:#c42f2f;border-color:#c42f2f;color:#fff}
+button.clear{background:var(--surface);border-color:var(--line2);color:var(--ink)}
+button.save{background:var(--accent);border-color:var(--accent)}
+.pending{font-size:.82rem;color:var(--warn);font-weight:600}
+td.c.edit{cursor:cell}
+td.c.past{opacity:.55}
+td.c.picked{box-shadow:inset 0 0 0 3px var(--ink)!important}
+td.c.changed::after{content:"";position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+td.c{position:relative;user-select:none}
+.modal{position:fixed;inset:0;background:rgb(0 0 0 / .45);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.modal .box{background:var(--surface);border-radius:14px;padding:20px;max-width:520px;width:100%;display:grid;gap:12px;box-shadow:0 20px 50px rgb(0 0 0 / .3)}
+.modal ul{margin:0;padding-left:18px;max-height:220px;overflow:auto;font-size:.88rem}
+.log{font-size:.85rem;margin:0;padding-left:18px}
+.log .ok{color:var(--ok)} .log .bad{color:var(--full)}
 .err{color:var(--full)}
 @media (max-width:700px){.ilist li{grid-template-columns:1fr}}
 </style>
@@ -105,14 +125,14 @@ td.flag{outline:2px solid var(--accent);outline-offset:-2px}
       <div class="brand"><img class="logo" src="__LOGO__" alt="" width="40" height="40"><span class="brandname">Dragonara Casino</span></div>
       <h1>Leave manager</h1>
     </div>
-    <span class="badge">Step 1 · read-only preview</span>
+    <div class="who"><label for="author">Your name</label><input id="author" placeholder="Name shown on comments" autocomplete="name"><span class="badge">Step 2 · editing, no publishing</span></div>
   </header>
 
   <section class="card" style="display:grid;gap:10px">
     <div class="drop" id="drop">
       <div>
         <p><b>Drop the holiday folder or the Excel files here</b></p>
-        <p class="muted">Files stay on this computer. Nothing is saved or published in this preview.</p>
+        <p class="muted">Files stay on this computer. To save changes, open the <b>folder</b> (Choose folder or drop the folder).</p>
       </div>
       <div class="actions">
         <button id="pickDir">Choose folder</button>
@@ -127,6 +147,19 @@ td.flag{outline:2px solid var(--accent);outline-offset:-2px}
 
   <section id="work" hidden style="display:grid;gap:16px">
     <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="toolbar" id="toolbar">
+      <div class="grp">
+        <span class="sel" id="selInfo">Select days in the grid</span>
+        <button class="book" id="actBook" disabled>Book</button>
+        <button class="cancel" id="actCancel" disabled>Cancel</button>
+        <button class="clear" id="actClear" disabled>Clear</button>
+        <button class="sec" id="actUndo" disabled>Undo</button>
+      </div>
+      <div class="grp">
+        <span class="pending" id="pending"></span>
+        <button class="save" id="save" disabled>Save to Excel</button>
+      </div>
+    </div>
     <section class="card" style="display:grid;gap:12px">
       <div class="bar">
         <div class="nav">
@@ -140,49 +173,74 @@ td.flag{outline:2px solid var(--accent);outline-offset:-2px}
           <li><span class="sw" style="background:repeating-linear-gradient(135deg,var(--block-bg) 0 3px,transparent 3px 6px)"></span>Stop leave</li>
           <li><span class="sw" style="background:var(--c-black)"></span>Marked full</li>
           <li><span class="sw" style="border:2px solid var(--accent)"></span>Issue</li>
+          <li><span class="sw" style="position:relative;background:var(--surface)"><span style="position:absolute;top:1px;right:1px;width:5px;height:5px;border-radius:50%;background:var(--accent)"></span></span>Unsaved change</li>
         </ul>
       </div>
       <div class="gridwrap"><table id="grid"></table></div>
     </section>
+    <section class="card" id="saveLog" hidden><h3 style="font-size:1rem;margin:0 0 6px">Last save</h3><ul class="log" id="logList"></ul></section>
     <section class="card issues">
       <h3 id="issuesTitle">Issues</h3>
       <ul class="ilist" id="issues"></ul>
     </section>
   </section>
 </div>
+<div class="modal" id="modal" hidden><div class="box" id="modalBox"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 /*__CORE__*/
 </script>
 <script>
-const C = window.LeaveCore;
+/*__EDIT__*/
+</script>
+<script>
+const C = window.LeaveCore, E = window.LeaveEdit;
 const $ = id => document.getElementById(id);
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DOW = ["S","M","T","W","T","F","S"];
 const parseXML = s => new DOMParser().parseFromString(s, "application/xml");
+const serialize = d => new XMLSerializer().serializeToString(d);
 const TODAY = new Date(); const todayKey = TODAY.getFullYear()*10000 + (TODAY.getMonth()+1)*100 + TODAY.getDate();
 const START = [TODAY.getFullYear(), TODAY.getMonth()+1];
-let loaded = {};          // dept id -> {cfg, fileName, months, issues, roster}
+const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch(e){} } };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let loaded = {};   // dept id -> {cfg, fileName, bytes, handle, dir, lastModified, months, issues, roster, undo:[], changed:Set, dirty}
 let cur = null, keys = [], idx = 0;
+let picked = new Set(), anchor = null, dragging = false;
 
-async function loadFiles(list){
-  const xlsx = list.filter(f => /\.xlsx$/i.test(f.name) && !f.name.startsWith("~$"));
+$("author").value = store.get("lm-author") || "";
+$("author").addEventListener("input", () => { store.set("lm-author", $("author").value.trim()); updateToolbar(); });
+
+// ---------- loading ----------
+async function loadEntries(list){ // list of {file, handle?, dir?}
+  const xlsx = list.filter(x => /\.xlsx$/i.test(x.file.name) && !x.file.name.startsWith("~$"));
+  if (Object.values(loaded).some(L => L.dirty)){
+    const ok = await ask("Unsaved changes", "<p>Loading new files discards the changes you have not saved. Continue?</p>", "Discard and load", "Keep editing");
+    if (!ok) return;
+  }
+  loaded = {}; picked.clear();
   $("files").innerHTML = ""; $("status").textContent = xlsx.length ? "Reading " + xlsx.length + " file(s)…" : "No .xlsx files found.";
-  for (const f of xlsx){
-    const li = document.createElement("li"); li.textContent = f.name; $("files").appendChild(li);
-    const cfg = C.deptForFile(f.name);
+  for (const x of xlsx){
+    const li = document.createElement("li"); li.textContent = x.file.name; $("files").appendChild(li);
+    const cfg = C.deptForFile(x.file.name);
     if (!cfg){ li.className = "skip"; li.textContent += " · not used"; continue; }
     try {
-      const book = await C.openWorkbook(JSZip, await f.arrayBuffer(), parseXML);
-      const res = await C.parseDept(cfg, book, START);
-      loaded[cfg.id] = { cfg, fileName: f.name, ...res };
-      li.textContent += " · " + cfg.dept;
-    } catch (e) { li.className = "skip"; li.innerHTML = f.name + ' · <span class="err">could not be read</span>'; console.error(e); }
+      const bytes = new Uint8Array(await x.file.arrayBuffer());
+      const L = { cfg, fileName: x.file.name, bytes, handle: x.handle || null, dir: x.dir || null, lastModified: x.file.lastModified, undo: [], changed: new Set(), dirty: false };
+      await reparse(L);
+      loaded[cfg.id] = L;
+      li.textContent += " · " + cfg.dept + (L.handle && L.dir ? "" : " · read-only");
+    } catch (e) { li.className = "skip"; li.innerHTML = esc(x.file.name) + ' · <span class="err">could not be read</span>'; console.error(e); }
   }
   const n = Object.keys(loaded).length;
-  $("status").textContent = n ? n + " department(s) loaded." : "None of the files is a holiday calendar.";
-  if (n){ $("work").hidden = false; if (!cur || !loaded[cur]) cur = C.DEPTS.find(d => loaded[d.id]).id; openDept(cur); }
+  const canSave = Object.values(loaded).some(L => L.handle && L.dir);
+  $("status").textContent = n ? n + " department(s) loaded." + (canSave ? "" : " Read-only: open the folder to be able to save.") : "None of the files is a holiday calendar.";
+  if (n){ $("work").hidden = false; if (!cur || !loaded[cur]) cur = C.DEPTS.find(d => loaded[d.id]).id; openDept(cur, true); }
+}
+async function reparse(L){
+  const book = await C.openWorkbook(JSZip, L.bytes, parseXML);
+  Object.assign(L, await C.parseDept(L.cfg, book, START));
 }
 
 function renderTabs(){
@@ -191,13 +249,14 @@ function renderTabs(){
     const L = loaded[d.id]; if (!L) continue;
     const b = document.createElement("button"); b.className = "tab"; b.setAttribute("role","tab"); b.setAttribute("aria-selected", d.id === cur);
     const n = L.issues.filter(i => i.kind !== "over").length;
-    b.innerHTML = d.dept + (n ? ' <span class="count">' + n + "</span>" : "");
-    b.onclick = () => openDept(d.id); $("tabs").appendChild(b);
+    b.innerHTML = esc(d.dept) + (L.dirty ? " •" : "") + (n ? ' <span class="count">' + n + "</span>" : "");
+    b.onclick = () => openDept(d.id, true); $("tabs").appendChild(b);
   }
 }
-function openDept(id){
-  cur = id; const L = loaded[id]; keys = Object.keys(L.months).sort();
-  const nowK = START[0] + "-" + String(START[1]).padStart(2,"0"); idx = Math.max(0, keys.indexOf(nowK));
+function openDept(id, resetMonth){
+  cur = id; const L = loaded[id]; keys = Object.keys(L.months).sort(); picked.clear();
+  if (resetMonth){ const nowK = START[0] + "-" + String(START[1]).padStart(2,"0"); idx = Math.max(0, keys.indexOf(nowK)); }
+  idx = Math.min(idx, keys.length - 1);
   renderTabs(); render();
 }
 
@@ -206,6 +265,8 @@ function freeCell(G, d, blocked){
   const left = Math.max(0, G.limit - G.booked[d-1]);
   return [left === 0 ? "f-full" : (left === 1 && G.limit > 1 ? "f-warn" : "f-ok"), left];
 }
+const cellKey = (mk, row, d) => mk + "|" + row + "|" + d;
+function editable(M, y, mo, d){ return !M.blocked.includes(d) && y*10000 + mo*100 + d >= todayKey; }
 
 function render(){
   const L = loaded[cur]; const mk = keys[idx]; const M = L.months[mk]; const R = L.roster[mk];
@@ -222,13 +283,15 @@ function render(){
   const groups = L.cfg.order.filter(g => M.groups[g]);
   for (const g of groups){
     const label = (L.cfg.labels && L.cfg.labels[g]) || g; const G = M.groups[g];
-    h += '<tr class="grp"><td class="name">' + label + ' · max ' + G.limit + '</td><td colspan="' + nd + '"></td></tr>';
+    h += '<tr class="grp"><td class="name">' + esc(label) + ' · max ' + G.limit + '</td><td colspan="' + nd + '"></td></tr>';
     for (const p of R.people.filter(p => p.group === g)){
       h += '<tr><td class="name" title="' + esc(p.name) + '">' + esc(p.name) + "</td>";
       p.days.forEach((c, i) => {
-        const d = i + 1, k = y*10000 + mo*100 + d;
+        const d = i + 1, k = y*10000 + mo*100 + d, key = cellKey(mk, p.row, d);
         let cls = c.code === "K" ? "k" : c.code === "R" ? "R" : (c.code === "G" || c.code === "g") ? "G" : (c.code === "." || c.code === "w" || c.code === "s") ? "plain" : ("DvYBO".includes(c.code) ? c.code : "other");
-        h += '<td class="c ' + cls + (k === todayKey ? " today" : "") + '">' + esc(c.text.slice(0,3)) + "</td>";
+        const ed = editable(M, y, mo, d);
+        h += '<td class="c ' + cls + (k === todayKey ? " today" : "") + (ed ? " edit" : (M.blocked.includes(d) ? "" : " past")) + (picked.has(key) ? " picked" : "") + (L.changed.has(key) ? " changed" : "") +
+             '"' + (ed ? ' data-k="' + key + '"' : "") + '>' + esc(c.text.slice(0,3)) + "</td>";
       });
       h += "</tr>";
     }
@@ -244,14 +307,150 @@ function render(){
   $("issuesTitle").textContent = "Issues in " + MONTHS[mo-1] + " " + y + " (" + list.length + ")";
   $("issues").innerHTML = list.length ? list.map(i => '<li><span class="kind k-' + i.kind + '">' +
     ({black:"Marked full", over:"Over limit", text:"Unrecognised", structure:"Sheet"})[i.kind] + "</span><span>" +
-    (i.day ? MONTHS[mo-1].slice(0,3) + " " + i.day : "") + (i.group && groups.length > 1 ? " · " + ((L.cfg.labels && L.cfg.labels[i.group]) || i.group) : "") +
+    (i.day ? MONTHS[mo-1].slice(0,3) + " " + i.day : "") + (i.group && groups.length > 1 ? " · " + esc((L.cfg.labels && L.cfg.labels[i.group]) || i.group) : "") +
     "</span><span>" + esc(i.text) + "</span></li>").join("") : '<li style="grid-template-columns:1fr" class="muted">No issues this month.</li>';
+  updateToolbar();
 }
-const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-// ---- loading: drag & drop (files or folders), pickers ----
+// ---------- selection ----------
+const grid = $("grid");
+function cellsBetween(a, b){
+  const [mk, ra, da] = a.split("|"), [, rb, db] = b.split("|");
+  const R = loaded[cur].roster[mk]; const rows = R.people.map(p => p.row);
+  const i1 = rows.indexOf(+ra), i2 = rows.indexOf(+rb), [lo, hi] = [Math.min(i1, i2), Math.max(i1, i2)], [d1, d2] = [Math.min(+da, +db), Math.max(+da, +db)];
+  const out = [];
+  for (let i = lo; i <= hi; i++) for (let d = d1; d <= d2; d++){ const k = cellKey(mk, rows[i], d); if (grid.querySelector('td[data-k="' + k + '"]')) out.push(k); }
+  return out;
+}
+grid.addEventListener("mousedown", e => {
+  const td = e.target.closest("td[data-k]"); if (!td) return;
+  e.preventDefault(); const k = td.dataset.k;
+  if (e.shiftKey && anchor){ cellsBetween(anchor, k).forEach(x => picked.add(x)); }
+  else if (e.ctrlKey || e.metaKey){ picked.has(k) ? picked.delete(k) : picked.add(k); anchor = k; }
+  else { picked.clear(); picked.add(k); anchor = k; dragging = true; }
+  paintPicked();
+});
+grid.addEventListener("mouseover", e => {
+  if (!dragging) return; const td = e.target.closest("td[data-k]"); if (!td) return;
+  picked.clear(); cellsBetween(anchor, td.dataset.k).forEach(x => picked.add(x)); paintPicked();
+});
+document.addEventListener("mouseup", () => { dragging = false; });
+document.addEventListener("keydown", e => {
+  if (!$("modal").hidden || e.target.tagName === "INPUT") return;
+  if (e.key === "Escape"){ picked.clear(); paintPicked(); }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z"){ e.preventDefault(); undo(); }
+});
+function paintPicked(){
+  grid.querySelectorAll("td.picked").forEach(td => td.classList.remove("picked"));
+  picked.forEach(k => { const td = grid.querySelector('td[data-k="' + k + '"]'); if (td) td.classList.add("picked"); });
+  updateToolbar();
+}
+function updateToolbar(){
+  const L = cur && loaded[cur]; const n = picked.size, hasAuthor = !!$("author").value.trim();
+  $("selInfo").textContent = n ? n + " day(s) selected" : "Select days in the grid";
+  $("actBook").disabled = !n || !hasAuthor; $("actCancel").disabled = !n; $("actClear").disabled = !n;
+  $("actBook").title = hasAuthor ? "" : "Enter your name first (used on the booking comment)";
+  $("actUndo").disabled = !(L && L.undo.length);
+  const dirty = Object.values(loaded).filter(x => x.dirty);
+  $("pending").textContent = dirty.length ? "Unsaved: " + dirty.map(x => x.cfg.dept + " (" + x.changed.size + ")").join(", ") : "";
+  $("save").disabled = !dirty.length;
+}
+
+// ---------- actions ----------
+function clearSource(R, person, d, M){
+  // fill to restore: an empty, not booked, not cancelled cell of the same group on the same day (keeps black "full" marks consistent)
+  const o = R.people.find(x => x !== person && x.group === person.group && !x.days[d-1].text && ["K", ".", "w", "s"].includes(x.days[d-1].code))
+         || R.people.find(x => x !== person && !x.days[d-1].text && ["K", ".", "w", "s"].includes(x.days[d-1].code));
+  return o ? { row: o.row, col: R.dayCol + d - 1 } : undefined;
+}
+async function act(action){
+  const L = loaded[cur]; if (!picked.size) return;
+  const author = $("author").value.trim();
+  if (action === "book" && !author){ $("author").focus(); return; }
+  const edits = [], byDay = {};
+  for (const k of picked){
+    const [mk, row, d] = k.split("|"); const R = L.roster[mk]; const person = R.people.find(p => p.row === +row);
+    const e = { sheetPath: R.path, row: +row, col: R.dayCol + +d - 1, action };
+    if (action === "clear") e.clearFillFrom = clearSource(R, person, +d, L.months[mk]);
+    edits.push(e);
+    if (action === "book"){ const c = person.days[+d-1]; const already = !["K",".","w","s","R","G","g"].includes(c.code) || /^(L|X|AL|8)$/i.test(c.text);
+      if (!already){ const g = person.group; byDay[g + "|" + d] = byDay[g + "|" + d] || { g, d: +d, mk, add: 0 }; byDay[g + "|" + d].add++; } }
+  }
+  if (action === "book"){
+    const over = Object.values(byDay).map(x => { const G = L.months[x.mk].groups[x.g]; return { ...x, after: G.booked[x.d-1] + x.add, limit: G.limit }; }).filter(x => x.after > x.limit);
+    if (over.length){
+      const [y, mo] = keys[idx].split("-").map(Number);
+      const ok = await ask("Over the limit", "<p>These days go over the department limit:</p><ul>" + over.map(x => "<li>" + MONTHS[mo-1].slice(0,3) + " " + x.d + " · " + esc((L.cfg.labels && L.cfg.labels[x.g]) || x.g) + ": " + x.after + " on leave, max " + x.limit + "</li>").join("") + "</ul>", "Book anyway", "Go back");
+      if (!ok) return;
+    }
+  }
+  L.undo.push({ bytes: L.bytes, changed: new Set(L.changed), dirty: L.dirty });
+  const zip = await JSZip.loadAsync(L.bytes);
+  await E.applyEdits(zip, parseXML, serialize, edits, { author, when: new Date() });
+  L.bytes = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
+  picked.forEach(k => L.changed.add(k)); L.dirty = true; picked.clear();
+  await reparse(L); renderTabs(); render();
+}
+async function undo(){
+  const L = loaded[cur]; if (!L || !L.undo.length) return;
+  const u = L.undo.pop(); L.bytes = u.bytes; L.changed = u.changed; L.dirty = u.dirty;
+  await reparse(L); renderTabs(); render();
+}
+$("actBook").onclick = () => act("book");
+$("actCancel").onclick = () => act("cancel");
+$("actClear").onclick = () => act("clear");
+$("actUndo").onclick = undo;
+
+// ---------- save ----------
+const stamp = d => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0") + " " + String(d.getHours()).padStart(2,"0") + String(d.getMinutes()).padStart(2,"0") + String(d.getSeconds()).padStart(2,"0");
+async function exists(dir, name){ try { await dir.getFileHandle(name); return true; } catch(e){ return false; } }
+async function saveOne(L){
+  if (!L.handle || !L.dir) return "Read-only: open the folder (not single files) to save.";
+  if ((await L.dir.queryPermission({ mode: "readwrite" })) !== "granted" && (await L.dir.requestPermission({ mode: "readwrite" })) !== "granted") return "Permission to write in the folder was not given.";
+  if (await exists(L.dir, "~$" + L.fileName) || await exists(L.dir, "~$" + L.fileName.slice(2))) return "The file is open in Excel (on this or another computer). Close it and save again.";
+  const disk = await L.handle.getFile();
+  if (disk.lastModified !== L.lastModified) return "The file was changed by someone else after you loaded it. Reload the folder, redo your changes and save.";
+  const bdir = await L.dir.getDirectoryHandle("_backup", { create: true });
+  const base = L.fileName.replace(/\.xlsx$/i, "");
+  const bh = await bdir.getFileHandle(base + " " + stamp(new Date()) + ".xlsx", { create: true });
+  const bw = await bh.createWritable(); await bw.write(await disk.arrayBuffer()); await bw.close();
+  const olds = []; for await (const [n] of bdir.entries()) if (n.startsWith(base + " ") && n.endsWith(".xlsx")) olds.push(n);
+  olds.sort(); for (const n of olds.slice(0, Math.max(0, olds.length - 10))) await bdir.removeEntry(n);
+  try { const w = await L.handle.createWritable(); await w.write(L.bytes); await w.close(); }
+  catch (e) { return "The file could not be written (it may be open in Excel or locked). Nothing was changed; a backup was made."; }
+  L.lastModified = (await L.handle.getFile()).lastModified; L.dirty = false; L.changed.clear(); L.undo = [];
+  return null;
+}
+$("save").onclick = async () => {
+  $("save").disabled = true; $("save").textContent = "Saving…";
+  const res = [];
+  for (const L of Object.values(loaded).filter(x => x.dirty)){
+    let err; try { err = await saveOne(L); } catch (e) { console.error(e); err = "Unexpected error: " + e.message; }
+    res.push('<li class="' + (err ? "bad" : "ok") + '"><b>' + esc(L.cfg.dept) + "</b>: " + (err ? esc(err) : "saved to " + esc(L.fileName) + " (backup in _backup)") + "</li>");
+  }
+  $("logList").innerHTML = res.join(""); $("saveLog").hidden = false;
+  $("save").textContent = "Save to Excel"; renderTabs(); render();
+};
+window.addEventListener("beforeunload", e => { if (Object.values(loaded).some(L => L.dirty)){ e.preventDefault(); e.returnValue = ""; } });
+
+// ---------- modal ----------
+function ask(title, html, yes, no){
+  return new Promise(res => {
+    $("modalBox").innerHTML = "<h3>" + esc(title) + "</h3>" + html + '<div class="actions" style="justify-content:flex-end"><button class="sec" id="mNo">' + esc(no) + '</button><button id="mYes">' + esc(yes) + "</button></div>";
+    $("modal").hidden = false; $("mYes").focus();
+    const done = v => { $("modal").hidden = true; res(v); };
+    $("mYes").onclick = () => done(true); $("mNo").onclick = () => done(false);
+  });
+}
+
+// ---------- loading: drag & drop (files or folders), pickers ----------
+async function dirEntries(dir){
+  const out = [];
+  for await (const [name, h] of dir.entries()) if (h.kind === "file" && /\.xlsx$/i.test(name)) out.push({ file: await h.getFile(), handle: h, dir });
+  return out;
+}
 async function entryFiles(entry){
-  if (entry.isFile) return new Promise(res => entry.file(f => res([f]), () => res([])));
+  if (entry.isFile) return new Promise(res => entry.file(f => res([{ file: f }]), () => res([])));
   if (entry.isDirectory){
     const reader = entry.createReader(); let all = [], batch;
     do { batch = await new Promise(res => reader.readEntries(res, () => res([]))); all = all.concat(batch); } while (batch.length);
@@ -264,24 +463,31 @@ const drop = $("drop");
 ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, () => drop.classList.remove("over")));
 drop.addEventListener("drop", async e => {
   e.preventDefault();
-  const entries = Array.from(e.dataTransfer.items || []).map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
-  const files = entries.length ? (await Promise.all(entries.map(entryFiles))).flat() : Array.from(e.dataTransfer.files);
-  loadFiles(files);
+  const items = Array.from(e.dataTransfer.items || []);
+  if (items.length && items[0].getAsFileSystemHandle){
+    const handles = await Promise.all(items.map(i => i.getAsFileSystemHandle()));
+    let list = [];
+    for (const h of handles.filter(Boolean)){
+      if (h.kind === "directory") list = list.concat(await dirEntries(h));
+      else list.push({ file: await h.getFile(), handle: h });
+    }
+    return loadEntries(list);
+  }
+  const entries = items.map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+  loadEntries(entries.length ? (await Promise.all(entries.map(entryFiles))).flat() : Array.from(e.dataTransfer.files).map(f => ({ file: f })));
 });
 $("pickFiles").onclick = () => $("fileInput").click();
-$("fileInput").onchange = e => loadFiles(Array.from(e.target.files));
+$("fileInput").onchange = e => loadEntries(Array.from(e.target.files).map(f => ({ file: f })));
 $("pickDir").onclick = async () => {
   if (window.showDirectoryPicker){
-    try {
-      const dir = await window.showDirectoryPicker({ id: "holidays", mode: "read" });
-      const files = []; for await (const h of dir.values()) if (h.kind === "file") files.push(await h.getFile());
-      loadFiles(files);
-    } catch (e) { if (e.name !== "AbortError") $("status").textContent = "The folder could not be opened."; }
+    try { const dir = await window.showDirectoryPicker({ id: "holidays", mode: "readwrite" }); loadEntries(await dirEntries(dir)); }
+    catch (e) { if (e.name !== "AbortError") $("status").textContent = "The folder could not be opened."; }
   } else $("dirInput").click();
 };
-$("dirInput").onchange = e => loadFiles(Array.from(e.target.files).filter(f => !f.webkitRelativePath || f.webkitRelativePath.split("/").length === 2));
-$("prev").onclick = () => { if (idx > 0){ idx--; render(); } };
-$("next").onclick = () => { if (idx < keys.length - 1){ idx++; render(); } };
+$("dirInput").onchange = e => loadEntries(Array.from(e.target.files).filter(f => !f.webkitRelativePath || f.webkitRelativePath.split("/").length === 2).map(f => ({ file: f })));
+$("prev").onclick = () => { if (idx > 0){ idx--; picked.clear(); render(); } };
+$("next").onclick = () => { if (idx < keys.length - 1){ idx++; picked.clear(); render(); } };
+updateToolbar();
 </script>
 </body>
 </html>
