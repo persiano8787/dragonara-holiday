@@ -96,6 +96,7 @@ td.flag{outline:2px solid var(--accent);outline-offset:-2px}
 .k-black{background:var(--block-bg);color:var(--block)} .k-over{background:var(--full-bg);color:var(--full)} .k-text,.k-structure{background:var(--warn-bg);color:var(--warn)}
 .empty{padding:28px;text-align:center}
 .who{display:flex;align-items:center;gap:8px;font-size:.85rem}
+.who input.missing{border-color:var(--accent);background:var(--full-bg)}
 .who input{font:500 14px var(--body);padding:8px 10px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);width:200px}
 .toolbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;box-shadow:0 4px 14px rgb(0 0 0 / .06)}
 .toolbar .grp{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
@@ -859,8 +860,8 @@ function paintPicked(){
 function updateToolbar(){
   const L = cur && loaded[cur]; const n = picked.size, hasAuthor = !!$("author").value.trim();
   $("selInfo").textContent = n ? n + " day(s) selected" : "Select days in the grid";
-  $("actBook").disabled = !n || !hasAuthor; $("actCancel").disabled = !n; $("actClear").disabled = !n;
-  $("actBook").title = hasAuthor ? "" : "Enter your name first (used on the booking comment)";
+  $("actBook").disabled = !n; $("actCancel").disabled = !n; $("actClear").disabled = !n;
+  $("author").classList.toggle("missing", !hasAuthor);
   $("actUndo").disabled = !(L && L.undo.length);
   const dirty = Object.values(loaded).filter(x => x.dirty);
   $("pending").textContent = dirty.length ? "Unsaved: " + dirty.map(x => x.cfg.dept + " (" + x.changed.size + ")").join(", ") : "";
@@ -876,8 +877,11 @@ function clearSource(R, person, d, M){
 }
 async function act(action){
   const L = loaded[cur]; if (!picked.size) return;
-  const author = $("author").value.trim();
-  if (action === "book" && !author){ $("author").focus(); return; }
+  let author = $("author").value.trim();
+  if (action === "book" && !author){
+    author = await askName(); if (!author) return;
+    $("author").value = author; store.set("lm-author", author); updateToolbar();
+  }
   const edits = [], byDay = {};
   for (const k of picked){
     const [mk, row, d] = k.split("|"); const R = L.roster[mk]; const person = R.people.find(p => p.row === +row);
@@ -951,6 +955,19 @@ function ask(title, html, yes, no){
     $("modal").hidden = false; $("mYes").focus();
     const done = v => { $("modal").hidden = true; res(v); };
     $("mYes").onclick = () => done(true); $("mNo").onclick = () => done(false);
+  });
+}
+
+function askName(){
+  return new Promise(res => {
+    $("modalBox").innerHTML = '<h3>Your name</h3><p style="margin:0">Each booking gets a comment in the Excel file with today\'s date and your name, like the ones managers add by hand.</p>' +
+      '<input id="mName" placeholder="e.g. Antonio Barone" autocomplete="name" style="font:500 15px var(--body);padding:10px 12px;border:1px solid var(--line2);border-radius:8px;background:var(--bg);color:var(--ink)">' +
+      '<div class="actions" style="justify-content:flex-end"><button class="sec" id="mNo">Cancel</button><button id="mYes">Continue</button></div>';
+    $("modal").hidden = false; $("mName").focus();
+    const done = v => { $("modal").hidden = true; res(v); };
+    $("mYes").onclick = () => { const v = $("mName").value.trim(); if (v) done(v); else $("mName").focus(); };
+    $("mName").onkeydown = e => { if (e.key === "Enter") $("mYes").click(); };
+    $("mNo").onclick = () => done("");
   });
 }
 

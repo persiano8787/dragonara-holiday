@@ -14,11 +14,15 @@ const srv = http.createServer((q, r) => { let p = decodeURIComponent(q.url.split
   await pg.screenshot({ path: 'shot_mgr_start.png' });
   const dir = '/home/claude/xl/files'; await pg.setInputFiles('#fileInput', fs.readdirSync(dir).map(n => path.join(dir, n)));
   await pg.waitForSelector('.tab'); await pg.click('.tab:has-text("Host")'); await pg.click('#next');
-  await pg.fill('#author', 'Antonio Barone');
   const cells = pg.locator('#grid tbody tr:has(td.name:text-is("ISAK")) td.c');
   await cells.nth(8).hover(); await pg.mouse.down(); await cells.nth(10).hover(); await pg.mouse.up();
   console.log('selezione:', await pg.textContent('#selInfo'));
+  console.log('Book attivo senza nome:', await pg.isEnabled('#actBook'));
   await pg.click('#actBook'); await pg.waitForTimeout(300);
+  console.log('chiede il nome:', await pg.isVisible('#mName'));
+  await pg.screenshot({ path: 'shot_mgr_name.png' });
+  await pg.fill('#mName', 'Antonio Barone'); await pg.click('#mYes'); await pg.waitForTimeout(500);
+  console.log('nome salvato nel campo:', await pg.inputValue('#author'));
   console.log('modale dopo Book:', await pg.isVisible('#modal'));
   await pg.screenshot({ path: 'shot_mgr_modal.png' });
   await pg.click('#mYes'); await pg.waitForTimeout(800);
